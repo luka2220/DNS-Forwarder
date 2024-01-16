@@ -9,6 +9,7 @@ import (
 
 	"program/dns-forward/error"
 
+	"github.com/miekg/dns"
 	"github.com/spf13/cobra"
 )
 
@@ -25,6 +26,8 @@ var startCmd = &cobra.Command{
 		fmt.Println("Starting UDP server...")
 		var port int = 8080
 
+		dns.HandleFunc(".", handleDNSRequest)
+
 		// Creating a UDP address to listen on all available network interfaces
 		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", port))
 		error.Check(err)
@@ -32,27 +35,45 @@ var startCmd = &cobra.Command{
 		// Creating a UDP listener
 		conn, err := net.ListenUDP("udp", addr)
 		error.Check(err)
+
 		// Close the UDP server once Run in finished executing
 		defer conn.Close()
 
 		fmt.Printf("UDP server is listening on port %d\n", port)
 
-		// Buffer to hold incoming data
-		buffer := make([]byte, 1024)
+		// Creating a tcp listener
+		l, err := net.Listen("tcp", ":2000")
+		error.Check(err)
 
-		for {
-			// Read data from the connection
-			n, clientAddr, err := conn.ReadFromUDP(buffer)
-			error.Check(err)
-
-			fmt.Printf("Received %d bytes from %s: %s\n", n, clientAddr, buffer[:n])
-
-			// Respond to the client
-			response := []byte("Hello from UDP server!")
-			_, err = conn.WriteToUDP(response, clientAddr)
-			error.Check(err)
-		}
+		err = dns.ActivateAndServe(l, conn, dns.DefaultServeMux)
+		error.Check(err)
 	},
+}
+
+func handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
+	m := new(dns.Msg)
+	m.SetReply(r)
+
+	question := r.Question[0]
+
+	// TODO: Add DNS query logic below
+	// In this example, we always respond with a fixed IP address (8.8.8.8) for any query
+
+	// Check the query type (A record or IPv4 address)
+	if question.Qtype == dns.TypeA {
+		// Create a DNS A record response
+		rr, err := dns.NewRR(fmt.Sprintf("%s IN A 8.8.8.8", question.Name))
+		if err != nil {
+			fmt.Println("Error creating DNS response:", err)
+			return
+		}
+		m.Answer = append(m.Answer, rr)
+	} else {
+		// Handle other query types or respond with an error
+		m.SetRcode(r, dns.RcodeNameError)
+	}
+
+	w.WriteMsg(m)
 }
 
 func init() {
