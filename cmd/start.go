@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"net"
+	"sync"
 
 	"program/dns-forward/error"
 
@@ -50,27 +51,53 @@ var startCmd = &cobra.Command{
 	},
 }
 
+var cacheMutex sync.RWMutex
+var dnsCache = make(map[string]dns.Msg)
+
 func handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 
 	question := r.Question[0]
 
-	// TODO: Add DNS query logic below
-	// In this example, we always respond with a fixed IP address (8.8.8.8) for any query
+	cacheKey := fmt.Sprintf("%s|%d", question.Name, question.Qtype)
 
-	// Check the query type (A record or IPv4 address)
-	if question.Qtype == dns.TypeA {
-		// Create a DNS A record response
-		rr, err := dns.NewRR(fmt.Sprintf("%s IN A 8.8.8.8", question.Name))
+	// Check the cache for a previous response
+	cacheMutex.RLock()
+	cachedResponse, cacheExists := dnsCache[cacheKey]
+	cacheMutex.RUnlock()
+
+	if cacheExists {
+		// Serve the response from the cache
+		m.Answer = append(m.Answer, cachedResponse.Answer...)
+	} else {
+		// Forward DNS query to another DNS server
+		forwardedResponse, err := dns.Exchange(r, "8.8.8.8:53")
 		if err != nil {
-			fmt.Println("Error creating DNS response:", err)
+			fmt.Println("Error forwarding DNS request:", err)
+			m.SetRcode(r, dns.RcodeServerFailure)
+			w.WriteMsg(m)
 			return
 		}
-		m.Answer = append(m.Answer, rr)
-	} else {
-		// Handle other query types or respond with an error
-		m.SetRcode(r, dns.RcodeNameError)
+
+		// Check the query type (A record or IPv4 address)
+		if question.Qtype == dns.TypeA {
+			// Create a DNS A record response based on the forwarded response
+			for _, rr := range forwardedResponse.Answer {
+				m.Answer = append(m.Answer, rr)
+			}
+
+			// Cache the response
+			cacheMutex.Lock()
+			dnsCache[cacheKey] = *forwardedResponse
+			cacheMutex.Unlock()
+		} else {
+			// Handle other query types or respond with an error
+			m.SetRcode(r, dns.RcodeNameError)
+		}
+
+		// Print that the request has been forwarded
+		fmt.Println("Forwarded DNS request to 8.8.8.8:53")
 	}
 
 	w.WriteMsg(m)
