@@ -11,3 +11,6 @@ A CLI DNS Forwarder application that can resolve the IP address for a host eithe
 
 - An example output:
   ![Screenshot 2024-01-16 at 10 00 23 AM](https://github.com/luka2220/DNS-Forwarder/assets/42144047/f3152265-f9be-4954-a5b2-06f6e1d47cf1)
+
+### Updates
+If you have any feature requests, updates, or ways I can improve the code please let me know! Any collaborators and contributors are all welcome!!! 
