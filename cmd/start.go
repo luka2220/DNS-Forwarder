@@ -58,6 +58,8 @@ func handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 
+	fmt.Println("DNS Message: ", r)
+
 	question := r.Question[0]
 
 	cacheKey := fmt.Sprintf("%s|%d", question.Name, question.Qtype)
@@ -82,10 +84,8 @@ func handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 		// Check the query type (A record or IPv4 address)
 		if question.Qtype == dns.TypeA {
-			// Create a DNS A record response based on the forwarded response
-			for _, rr := range forwardedResponse.Answer {
-				m.Answer = append(m.Answer, rr)
-			}
+			// Serve the response from the cache
+			m.Answer = append(m.Answer, cachedResponse.Answer...)
 
 			// Cache the response
 			cacheMutex.Lock()
