@@ -1,11 +1,21 @@
 # DNS Forwarder CLI
 A CLI DNS Forwarder application that can resolve the IP address for a host either from its local cache or by forwarding the request to an authoritative nameserver.
 
+## Project Setup
+Note: Make sure you have GO installed on your system
+* Clone the repo on your system
+  
+* In the project directory run the following commands:
+  - `go install`
+  - `go build`
+
+* To run the program:
+  - dns-forward start
+
 ## Testing the DNS Server
 - Run the following commands below to ensure the DNS server is configured correctly.
 
 - To test the DNS server
-  * ` go run main.go start`
   * open a separate terminal window while the program is running to run the command below.
   * `dig @127.0.0.1 -p 8080 www.google.com`
 
