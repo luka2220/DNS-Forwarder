@@ -24,3 +24,6 @@ Note: Make sure you have GO installed on your system
 
 ### Updates
 If you have any feature requests, updates, or ways I can improve the code please let me know! Any collaborators and contributors are all welcome!!! 
+
+### Project Details
+Check out an article I wrote about my thought process throughout building the project and some challenges I faced: https://medium.com/@piplicaluka64/building-a-dns-forwarder-cli-application-in-golang-79c3fe8eda5a 
