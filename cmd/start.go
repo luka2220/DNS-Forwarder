@@ -27,8 +27,6 @@ var startCmd = &cobra.Command{
 		fmt.Println("Starting UDP server...")
 		var port int = 8080
 
-		dns.HandleFunc(".", handleDNSRequest)
-
 		// Creating a UDP address to listen on all available network interfaces
 		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", port))
 		error.Check(err)
@@ -37,18 +35,25 @@ var startCmd = &cobra.Command{
 		conn, err := net.ListenUDP("udp", addr)
 		error.Check(err)
 
-		// Close the UDP server once Run in finished executing
-		defer conn.Close()
-
-		fmt.Printf("UDP server is listening on port %d\n", port)
-
-		// Creating a tcp listener
-		l, err := net.Listen("tcp", ":2000")
-		error.Check(err)
-
-		err = dns.ActivateAndServe(l, conn, dns.DefaultServeMux)
-		error.Check(err)
+		// Call the function responsible for starting the UDP server
+		startUDPServer(port, conn, dns.DefaultServeMux)
 	},
+}
+
+func startUDPServer(port int, conn *net.UDPConn, handler dns.Handler) {
+	dns.HandleFunc(".", handleDNSRequest)
+
+	// Close the UDP server once Run is finished executing
+	defer conn.Close()
+
+	fmt.Printf("UDP server is listening on port %d\n", port)
+
+	// Creating a tcp listener
+	l, err := net.Listen("tcp", ":2000")
+	error.Check(err)
+
+	err = dns.ActivateAndServe(l, conn, handler)
+	error.Check(err)
 }
 
 var cacheMutex sync.RWMutex
