@@ -5,10 +5,9 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"sync"
-
-	"program/dns-forward/error"
 
 	"github.com/miekg/dns"
 	"github.com/spf13/cobra"
@@ -24,16 +23,22 @@ var startCmd = &cobra.Command{
 		dns-forwarder start
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+		log.SetFlags(log.LstdFlags | log.Lshortfile) // Set up logger
+
 		fmt.Println("Starting UDP server...")
 		var port int = 8080
 
 		// Creating a UDP address to listen on all available network interfaces
 		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", port))
-		error.Check(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// Creating a UDP listener
 		conn, err := net.ListenUDP("udp", addr)
-		error.Check(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// Call the function responsible for starting the UDP server
 		startUDPServer(port, conn, dns.DefaultServeMux)
@@ -50,10 +55,11 @@ func startUDPServer(port int, conn *net.UDPConn, handler dns.Handler) {
 
 	// Creating a tcp listener
 	l, err := net.Listen("tcp", ":2000")
-	error.Check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	err = dns.ActivateAndServe(l, conn, handler)
-	error.Check(err)
+	 dns.ActivateAndServe(l, conn, handler)
 }
 
 var cacheMutex sync.RWMutex

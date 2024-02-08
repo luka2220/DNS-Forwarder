@@ -1,26 +1,17 @@
 package cmd
 
 import (
+	"log"
 	"net"
+	"os/exec"
 	"sync"
 	"testing"
 
 	"github.com/miekg/dns"
-	"github.com/stretchr/testify/assert"
 )
 
-// Mock DNS handler
-type MockDNSHandler struct {
-	Handled bool
-}
-
-func (m *MockDNSHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
-	m.Handled = true
-}
-
 func TestStartUDPServer(t *testing.T) {
-	// Mock dependencies
-	mockHandler := &MockDNSHandler{}
+	log.SetFlags(log.LstdFlags | log.Lshortfile) // Set up logger
 
 	// Initialize a Mock UDP Server
 	addr, _ := net.ResolveUDPAddr("udp", ":8080")
@@ -32,19 +23,25 @@ func TestStartUDPServer(t *testing.T) {
 
 	// Start the UDP server in a goroutine
 	go func() {
-		defer wg.Done()
-		startUDPServer(8080, conn, mockHandler)
-	}()
+		// Start the UDP server to run asynchronously
+		go startUDPServer(8080, conn, dns.DefaultServeMux)
 
-	defer conn.Close()
+		// Test the UDP server is running with dig command
+		cmd := exec.Command("dig", "@127.0.0.1", "-p", "8080", "google.com")
+		output, err := cmd.Output()
+
+		if err != nil {
+			log.Fatalf("Error: %v", err)
+		}
+
+		log.Printf("\nOutput \n%s", output)
+
+		// close the UDP connection
+		conn.Close()
+
+		wg.Done()
+	}()
 
 	// Wait for the goroutine to finish
 	wg.Wait()
-
-	// Assert to check if the DNS MockDNS servers handler was called
-	assert.True(t, mockHandler.Handled, "ServeDNS method should have been called")
-
-	// Assert for expected UDP port
-	expectedPort := 8080
-	assert.Equal(t, expectedPort, 8080, "Unexpected UDP port! Must be 8080")
 }
