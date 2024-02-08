@@ -6,11 +6,15 @@ Note: Make sure you have GO installed on your system
 * Clone the repo on your system
   
 * In the project directory run the following commands:
-  - `go install`
-  - `go build`
+  - `make tidy`
+  - `make build`
 
+* Once you've executed the commands above there will be an executable binary in the bin folder
+* You can check the Makefile in the root directory to see a list of available commands and what they do
+  
 * To run the program:
-  - dns-forward start
+  - `make start`
+  - To quit the program while it's running press `control + c`
 
 ## Testing the DNS Server
 - Run the following commands below to ensure the DNS server is configured correctly.
@@ -19,7 +23,7 @@ Note: Make sure you have GO installed on your system
   * open a separate terminal window while the program is running to run the command below.
   * `dig @127.0.0.1 -p 8080 www.google.com`
 
-- An example output:
+- An example output: <br><br>
   ![Screenshot 2024-01-16 at 10 00 23 AM](https://github.com/luka2220/DNS-Forwarder/assets/42144047/f3152265-f9be-4954-a5b2-06f6e1d47cf1)
 
 ### Updates
