@@ -1,3 +1,5 @@
+[![Go](https://github.com/luka2220/DNS-Forwarder/actions/workflows/go.yml/badge.svg)](https://github.com/luka2220/DNS-Forwarder/actions/workflows/go.yml)
+
 # DNS Forwarder CLI
 A CLI DNS Forwarder application that can resolve the IP address for a host either from its local cache or by forwarding the request to an authoritative nameserver.
 
